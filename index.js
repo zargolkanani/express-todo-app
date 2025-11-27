@@ -7,61 +7,42 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const userRoutes = require('./routes/user');
-const auth = require('./middleware/auth');
-const errorHandler = require('./middleware/errorHandler');
-const formatResponse = require('./middleware/formatResponse');
+const { auth } = require('./middleware/auth');
+const { formatResponse } = require('./middleware/formatResponse');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-// -------------------------
-// CORS دینامیک
-// -------------------------
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
-
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    }
-}));
-
-// -------------------------
-// Helmet برای امنیت
-// -------------------------
+// Middleware پایه
+app.use(express.json());
+app.use(express.static('public'));
 app.use(helmet());
-
-// -------------------------
-// Morgan برای لاگ حرفه‌ای
-// -------------------------
+app.use(compression());
 app.use(morgan('combined'));
 
-// -------------------------
-// Compression
-// -------------------------
-app.use(compression());
-
-// -------------------------
-// Rate Limit
-// -------------------------
-app.use(rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests'
+// CORS داینامیک
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error('Not allowed by CORS'));
+  }
 }));
 
-// -------------------------
-app.use(express.json());
-app.use(auth);
+// Rate Limit
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقیقه
+  max: 100,
+  message: { success: false, error: { message: 'Too many requests', status: 429 } }
+});
+app.use(limiter);
+
+// Routes
+app.use('/api/users', auth, userRoutes);
+
+// Middleware خروجی و خطا
 app.use(formatResponse);
-
-// -------------------------
-app.use('/api/users', userRoutes);
-
-// -------------------------
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

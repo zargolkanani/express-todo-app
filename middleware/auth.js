@@ -1,11 +1,9 @@
-module.exports = (req, res, next) => {
-    const apiKey = req.headers['x-api-key'];
+function auth(req, res, next) {
+  const key = req.header('x-api-key');
+  if (!key || key !== process.env.API_KEY) {
+    return res.status(401).json({ success: false, error: { message: 'Unauthorized', status: 401 } });
+  }
+  next();
+}
 
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        return next({
-            status: 401,
-            message: "Unauthorized: Invalid or missing API key"
-        });
-    }
-    next();
-};
+module.exports = { auth };

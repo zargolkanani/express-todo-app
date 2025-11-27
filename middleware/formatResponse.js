@@ -1,11 +1,14 @@
-module.exports = (req, res, next) => {
-    res.success = function (data) {
-        return res.json({
-            success: true,
-            data,
-            timestamp: new Date().toISOString()
-        });
-    };
+function formatResponse(req, res, next) {
+  const oldJson = res.json;
+  res.json = function(data) {
+    if (res.headersSent) return;
+    oldJson.call(this, {
+      success: true,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  };
+  next();
+}
 
-    next();
-};
+module.exports = { formatResponse };

@@ -1,35 +1,34 @@
+let users = [];
+let idCounter = 1;
 const { validationResult } = require('express-validator');
-const User = require('../models/user');
 
-exports.getUsers = async (req, res, next) => {
-    res.success(User.getAll());
+exports.getUsers = (req, res) => res.json(users);
+
+exports.createUser = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, error: { message: "Validation failed", status: 400, details: errors.array() } });
+  }
+  const user = { id: idCounter++, name: req.body.name, age: req.body.age };
+  users.push(user);
+  res.status(201).json(user);
 };
 
-exports.createUser = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return next({
-            status: 400,
-            message: 'Validation failed',
-            details: errors.array()
-        });
-    }
+exports.updateUser = (req, res) => {
+  const user = users.find(u => u.id == req.params.id);
+  if (!user) return res.status(404).json({ success: false, error: { message: 'Not found', status: 404 } });
 
-    const { name, age } = req.body;
-    const user = User.create({ name, age });
-    res.success(user);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, error: { message: "Validation failed", status: 400, details: errors.array() } });
+  }
+
+  user.name = req.body.name;
+  user.age = req.body.age;
+  res.json(user);
 };
 
-exports.updateUser = async (req, res, next) => {
-    const { id } = req.params;
-    const user = User.update(id, req.body);
-    if (!user) {
-        return next({ status: 404, message: 'User not found' });
-    }
-    res.success(user);
-};
-
-exports.deleteUser = async (req, res, next) => {
-    User.delete(req.params.id);
-    res.success({ message: 'User removed' });
+exports.deleteUser = (req, res) => {
+  users = users.filter(u => u.id != req.params.id);
+  res.status(204).end();
 };

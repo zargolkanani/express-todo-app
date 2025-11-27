@@ -1,10 +1,11 @@
-module.exports = (err, req, res, next) => {
+function errorHandler(err, req, res, next) {
+  console.error(err);
+  if (!res.headersSent) {
     res.status(err.status || 500).json({
-        success: false,
-        error: {
-            message: err.message || 'Server Error',
-            status: err.status || 500,
-            details: err.details || null
-        }
+      success: false,
+      error: { message: err.message || 'Internal Server Error', status: err.status || 500 }
     });
-};
+  }
+}
+
+module.exports = { errorHandler };

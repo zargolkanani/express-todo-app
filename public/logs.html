@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<title>داشبورد لاگ‌ها</title>
+</head>
+<body>
+<h1>داشبورد لاگ‌ها</h1>
+<ul id="logs"></ul>
+
+<script>
+async function loadLogs(){
+    const res = await fetch('/logs', { headers:{'x-api-key':'123456'} });
+    const data = await res.json();
+    const ul = document.getElementById('logs');
+    ul.innerHTML='';
+    data.forEach(log=>{
+        const li=document.createElement('li');
+        li.textContent=`[${log.time}] ${log.method} ${log.url}`;
+        ul.appendChild(li);
+    });
+}
+loadLogs();
+</script>
+</body>
+</html>
